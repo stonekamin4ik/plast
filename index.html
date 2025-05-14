@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Перевірка внесків</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f4f4f4;
+    }
+    input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    .result {
+      margin-top: 1rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Перевірка внесків</h1>
+  <label for="nameInput">Введіть ПІБ:</label><br>
+  <input id="nameInput" type="text" placeholder="Іван Іванов">
+  <button onclick="checkDebt()">Перевірити</button>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/1T6S9-ChacX1zu2ZXm64Jm8Omichen2NBPGQayEhFDqE/export?format=csv&gid=0";
+
+    async function checkDebt() {
+      const name = document.getElementById("nameInput").value.trim().toLowerCase();
+      const response = await fetch(CSV_URL);
+      const text = await response.text();
+      const rows = text.split("\n").map(row => row.split(","));
+      
+      const headers = rows[0].slice(1); // Місяці
+      const people = rows.slice(1);
+      const person = people.find(row => row[0].trim().toLowerCase() === name);
+
+      const resultDiv = document.getElementById("result");
+      if (!person) {
+        resultDiv.innerHTML = `<strong>ПІБ не знайдено.</strong>`;
+        return;
+      }
+
+      const debts = [];
+      for (let i = 1; i < person.length; i++) {
+        const value = person[i].trim();
+        if (value === "") {
+          debts.push(headers[i - 1]);
+        }
+      }
+
+      if (debts.length === 0) {
+        resultDiv.innerHTML = `<strong>У вас немає боргів. Дякуємо!</strong>`;
+      } else {
+        resultDiv.innerHTML = `
+          <strong>Ви винні за ${debts.length} місяці(в):</strong>
+          <ul>${debts.map(m => `<li>${m}</li>`).join("")}</ul>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
